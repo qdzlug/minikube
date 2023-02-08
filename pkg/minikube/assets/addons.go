@@ -18,19 +18,10 @@ package assets
 
 import (
 	"fmt"
-	"os"
-	"runtime"
-	"strings"
-
-	"github.com/blang/semver/v4"
-	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"k8s.io/minikube/deploy/addons"
 	"k8s.io/minikube/pkg/minikube/config"
 	"k8s.io/minikube/pkg/minikube/constants"
-	"k8s.io/minikube/pkg/minikube/out"
 	"k8s.io/minikube/pkg/minikube/vmpath"
-	"k8s.io/minikube/pkg/util"
 	"k8s.io/minikube/pkg/version"
 )
 
@@ -357,11 +348,7 @@ var Addons = map[string]*Addon{
 			vmpath.GuestAddonsDir,
 			"registry-svc.yaml",
 			"0640"),
-		MustBinAsset(addons.RegistryAssets,
-			"registry/registry-proxy.yaml.tmpl",
-			vmpath.GuestAddonsDir,
-			"registry-proxy.yaml",
-			"0640"),
+		x, ``,
 	}, false, "registry", "Google", "", "", map[string]string{
 		"Registry":          "registry:2.8.1@sha256:83bb78d7b28f1ac99c68133af32c93e9a1c149bcd3cb6e683a3ee56e312f1c96",
 		"KubeRegistryProxy": "google_containers/kube-registry-proxy:0.4@sha256:1040f25a5273de0d72c54865a8efd47e3292de9fb8e5353e3fa76736b854f2da",
@@ -750,180 +737,242 @@ var Addons = map[string]*Addon{
 	}, map[string]string{
 		"CloudSpanner": "gcr.io",
 	}),
-}
+	"nginx": NewAddon([]*BinAsset{
+		MustBinAsset(addons.NGINX,
+			"/nginx/ns-and-sa.yaml",
+			vmpath.GuestAddonsDir,
+			"ns-and-sa.yaml",
+			"0640"),
+		MustBinAsset(addons.NGINX,
+			"/nginx/rbac.yaml",
+			vmpath.GuestAddonsDir,
+			"rbac.yaml",
+			"0640"),
+		MustBinAsset(addons.NGINX,
+			"/nginx/default-server-secret.yaml",
+			vmpath.GuestAddonsDir,
+			"default-server-secret.yaml",
+			"0640"),
+		MustBinAsset(addons.NGINX,
+			"/nginx/nginx-config.yaml",
+			vmpath.GuestAddonsDir,
+			"nginx-config.yaml",
+			"0640"),
+		MustBinAsset(addons.NGINX,
+			"/nginx/ingress-class.yaml",
+			vmpath.GuestAddonsDir,
+			"ingress-class.yaml",
+			"0640"),
+		MustBinAsset(addons.NGINX,
+			"/nginx/k8s.nginx.org_virtualservers.yaml",
+			vmpath.GuestAddonsDir,
+			"k8s.nginx.org_virtualservers.yaml",
+			"0640"),
+		MustBinAsset(addons.NGINX,
+			"/nginx/k8s.nginx.org_virtualserverroutes.yaml",
+			vmpath.GuestAddonsDir,
+			"k8s.nginx.org_virtualserverroutes.yaml",
+			"0640"),
+		MustBinAsset(addons.NGINX,
+			"/nginx/k8s.nginx.org_transportservers.yaml",
+			vmpath.GuestAddonsDir,
+			"k8s.nginx.org_transportservers.yaml",
+			"0640"),
+		MustBinAsset(addons.NGINX,
+			"/nginx/k8s.nginx.org_policies.yaml",
+			vmpath.GuestAddonsDir,
+			"k8s.nginx.org_policies.yaml",
+			"0640"),
+		MustBinAsset(addons.NGINX,
+			"/nginx/nginx-ingress.yaml",
+			vmpath.GuestAddonsDir,
+			"nginx-ingress.yaml",
+			"0640"),
+		MustBinAsset(addons.NGINX,
+			"/nginx/nodeport.yaml",
+			vmpath.GuestAddonsDir,
+			"nodeport.yaml",
+			"0640"),
+		}, false, "nginx", "nginx", "", "https://docs.nginx.com/nginx-ingress-controller/",
+			map[string]string{
+			"nginx": "nginx/nginx-ingress@sha256:a52f1b0c2f1ae84393d3d40fc588db54c56bbe8c19d5cd79c234bff90de8f4a6",
+		}, map[string]string{
+			"nginx": "docker.io",
+		}),
 
-// parseMapString creates a map based on `str` which is encoded as <key1>=<value1>,<key2>=<value2>,...
-func parseMapString(str string) map[string]string {
+
+	// parseMapString creates a map based on `str` which is encoded as <key1>=<value1>,<key2>=<value2>,...
+	func parseMapString(str string) map[string]string {
 	mapResult := make(map[string]string)
 	if str == "" {
-		return mapResult
+	return mapResult
 	}
 	for _, pairText := range strings.Split(str, ",") {
-		vals := strings.Split(pairText, "=")
-		if len(vals) != 2 {
-			out.WarningT("Ignoring invalid pair entry {{.pair}}", out.V{"pair": pairText})
-			continue
-		}
-		mapResult[vals[0]] = vals[1]
+	vals := strings.Split(pairText, "=")
+	if len(vals) != 2 {
+	out.WarningT("Ignoring invalid pair entry {{.pair}}", out.V{"pair": pairText})
+	continue
+	}
+	mapResult[vals[0]] = vals[1]
 	}
 	return mapResult
-}
+	}
 
-// mergeMaps returns a map with the union of `source` and `override` where collisions take the value of `override`.
-func mergeMaps(source, override map[string]string) map[string]string {
+	// mergeMaps returns a map with the union of `source` and `override` where collisions take the value of `override`.
+	func mergeMaps(source, override map[string]string) map[string]string {
 	result := make(map[string]string)
 	for k, v := range source {
-		result[k] = v
+	result[k] = v
 	}
 	for k, v := range override {
-		result[k] = v
+	result[k] = v
 	}
 	return result
-}
+	}
 
-// filterKeySpace creates a map of the values in `target` where the keys are also in `keySpace`.
-func filterKeySpace(keySpace, target map[string]string) map[string]string {
+	// filterKeySpace creates a map of the values in `target` where the keys are also in `keySpace`.
+	func filterKeySpace(keySpace, target map[string]string) map[string]string {
 	result := make(map[string]string)
 	for name := range keySpace {
-		if value, ok := target[name]; ok {
-			result[name] = value
-		}
+	if value, ok := target[name]; ok {
+	result[name] = value
+	}
 	}
 	return result
-}
+	}
 
-// overrideDefaults creates a copy of `def` where `override` replaces any of its values that `override` contains.
-func overrideDefaults(def, override map[string]string) map[string]string {
+	// overrideDefaults creates a copy of `def` where `override` replaces any of its values that `override` contains.
+	func overrideDefaults(def, override map[string]string) map[string]string {
 	return mergeMaps(def, filterKeySpace(def, override))
-}
+	}
 
-// SelectAndPersistImages selects which images to use based on addon default images, previously persisted images, and newly requested images - which are then persisted for future enables.
-func SelectAndPersistImages(addon *Addon, cc *config.ClusterConfig) (images, customRegistries map[string]string, _ error) {
+	// SelectAndPersistImages selects which images to use based on addon default images, previously persisted images, and newly requested images - which are then persisted for future enables.
+	func SelectAndPersistImages(addon *Addon, cc *config.ClusterConfig) (images, customRegistries map[string]string, _ error) {
 	addonDefaultImages := addon.Images
 	if addonDefaultImages == nil {
-		addonDefaultImages = make(map[string]string)
+	addonDefaultImages = make(map[string]string)
 	}
 
 	// Use previously configured custom images.
 	images = overrideDefaults(addonDefaultImages, cc.CustomAddonImages)
 	if viper.IsSet(config.AddonImages) {
-		// Parse the AddonImages flag if present.
-		newImages := parseMapString(viper.GetString(config.AddonImages))
-		for name, image := range newImages {
-			if image == "" {
-				out.WarningT("Ignoring empty custom image {{.name}}", out.V{"name": name})
-				delete(newImages, name)
-				continue
-			}
-			if _, ok := addonDefaultImages[name]; !ok {
-				out.WarningT("Ignoring unknown custom image {{.name}}", out.V{"name": name})
-			}
-		}
-		// Use newly configured custom images.
-		images = overrideDefaults(addonDefaultImages, newImages)
-		// Store custom addon images to be written.
-		cc.CustomAddonImages = mergeMaps(cc.CustomAddonImages, newImages)
+	// Parse the AddonImages flag if present.
+	newImages := parseMapString(viper.GetString(config.AddonImages))
+	for name, image := range newImages {
+	if image == "" {
+	out.WarningT("Ignoring empty custom image {{.name}}", out.V{"name": name})
+	delete(newImages, name)
+	continue
+	}
+	if _, ok := addonDefaultImages[name]; !ok {
+	out.WarningT("Ignoring unknown custom image {{.name}}", out.V{"name": name})
+	}
+	}
+	// Use newly configured custom images.
+	images = overrideDefaults(addonDefaultImages, newImages)
+	// Store custom addon images to be written.
+	cc.CustomAddonImages = mergeMaps(cc.CustomAddonImages, newImages)
 	}
 
 	// Use previously configured custom registries.
 	customRegistries = filterKeySpace(addonDefaultImages, cc.CustomAddonRegistries) // filter by images map because registry map may omit default registry.
 	if viper.IsSet(config.AddonRegistries) {
-		// Parse the AddonRegistries flag if present.
-		customRegistries = parseMapString(viper.GetString(config.AddonRegistries))
-		for name := range customRegistries {
-			if _, ok := addonDefaultImages[name]; !ok { // check images map because registry map may omitted default registry
-				out.WarningT("Ignoring unknown custom registry {{.name}}", out.V{"name": name})
-				delete(customRegistries, name)
-			}
-		}
-		// Since registry map may omit default registry, any previously set custom registries for these images must be cleared.
-		for name := range addonDefaultImages {
-			delete(cc.CustomAddonRegistries, name)
-		}
-		// Merge newly set registries into custom addon registries to be written.
-		cc.CustomAddonRegistries = mergeMaps(cc.CustomAddonRegistries, customRegistries)
+	// Parse the AddonRegistries flag if present.
+	customRegistries = parseMapString(viper.GetString(config.AddonRegistries))
+	for name := range customRegistries {
+	if _, ok := addonDefaultImages[name]; !ok { // check images map because registry map may omitted default registry
+	out.WarningT("Ignoring unknown custom registry {{.name}}", out.V{"name": name})
+	delete(customRegistries, name)
+	}
+	}
+	// Since registry map may omit default registry, any previously set custom registries for these images must be cleared.
+	for name := range addonDefaultImages {
+	delete(cc.CustomAddonRegistries, name)
+	}
+	// Merge newly set registries into custom addon registries to be written.
+	cc.CustomAddonRegistries = mergeMaps(cc.CustomAddonRegistries, customRegistries)
 	}
 
 	// If images or registries were specified, save the config afterward.
 	if viper.IsSet(config.AddonImages) || viper.IsSet(config.AddonRegistries) {
-		// Since these values are only set when a user enables an addon, it is safe to refer to the profile name.
-		// Whether err is nil or not we still return here.
-		return images, customRegistries, config.Write(viper.GetString(config.ProfileName), cc)
+	// Since these values are only set when a user enables an addon, it is safe to refer to the profile name.
+	// Whether err is nil or not we still return here.
+	return images, customRegistries, config.Write(viper.GetString(config.ProfileName), cc)
 	}
 	return images, customRegistries, nil
-}
+	}
 
-// GenerateTemplateData generates template data for template assets
-func GenerateTemplateData(addon *Addon, cc *config.ClusterConfig, netInfo NetworkInfo, images, customRegistries map[string]string, enable bool) interface{} {
+	// GenerateTemplateData generates template data for template assets
+	func GenerateTemplateData(addon *Addon, cc *config.ClusterConfig, netInfo NetworkInfo, images, customRegistries map[string]string, enable bool) interface{} {
 	cfg := cc.KubernetesConfig
 	a := runtime.GOARCH
 	// Some legacy docker images still need the -arch suffix
 	// for less common architectures blank suffix for amd64
 	ea := ""
 	if runtime.GOARCH != "amd64" {
-		ea = "-" + runtime.GOARCH
+	ea = "-" + runtime.GOARCH
 	}
 
 	v, err := util.ParseKubernetesVersion(cfg.KubernetesVersion)
 	if err != nil {
-		return errors.Wrap(err, "parsing Kubernetes version")
+	return errors.Wrap(err, "parsing Kubernetes version")
 	}
 
 	opts := struct {
-		KubernetesVersion       map[string]uint64
-		PreOneTwentyKubernetes  bool
-		Arch                    string
-		ExoticArch              string
-		ImageRepository         string
-		LoadBalancerStartIP     string
-		LoadBalancerEndIP       string
-		CustomIngressCert       string
-		IngressAPIVersion       string
-		ContainerRuntime        string
-		RegistryAliases         string
-		Images                  map[string]string
-		Registries              map[string]string
-		CustomRegistries        map[string]string
-		NetworkInfo             map[string]string
-		Environment             map[string]string
-		LegacyPodSecurityPolicy bool
-		LegacyRuntimeClass      bool
+	KubernetesVersion       map[string]uint64
+	PreOneTwentyKubernetes  bool
+	Arch                    string
+	ExoticArch              string
+	ImageRepository         string
+	LoadBalancerStartIP     string
+	LoadBalancerEndIP       string
+	CustomIngressCert       string
+	IngressAPIVersion       string
+	ContainerRuntime        string
+	RegistryAliases         string
+	Images                  map[string]string
+	Registries              map[string]string
+	CustomRegistries        map[string]string
+	NetworkInfo             map[string]string
+	Environment             map[string]string
+	LegacyPodSecurityPolicy bool
+	LegacyRuntimeClass      bool
 	}{
-		KubernetesVersion:      make(map[string]uint64),
-		PreOneTwentyKubernetes: false,
-		Arch:                   a,
-		ExoticArch:             ea,
-		ImageRepository:        cfg.ImageRepository,
-		LoadBalancerStartIP:    cfg.LoadBalancerStartIP,
-		LoadBalancerEndIP:      cfg.LoadBalancerEndIP,
-		CustomIngressCert:      cfg.CustomIngressCert,
-		RegistryAliases:        cfg.RegistryAliases,
-		IngressAPIVersion:      "v1", // api version for ingress (eg, "v1beta1"; defaults to "v1" for k8s 1.19+)
-		ContainerRuntime:       cfg.ContainerRuntime,
-		Images:                 images,
-		Registries:             addon.Registries,
-		CustomRegistries:       customRegistries,
-		NetworkInfo:            make(map[string]string),
-		Environment: map[string]string{
-			"MockGoogleToken": os.Getenv("MOCK_GOOGLE_TOKEN"),
-		},
-		LegacyPodSecurityPolicy: v.LT(semver.Version{Major: 1, Minor: 25}),
-		LegacyRuntimeClass:      v.LT(semver.Version{Major: 1, Minor: 25}),
+	KubernetesVersion:      make(map[string]uint64),
+	PreOneTwentyKubernetes: false,
+	Arch:                   a,
+	ExoticArch:             ea,
+	ImageRepository:        cfg.ImageRepository,
+	LoadBalancerStartIP:    cfg.LoadBalancerStartIP,
+	LoadBalancerEndIP:      cfg.LoadBalancerEndIP,
+	CustomIngressCert:      cfg.CustomIngressCert,
+	RegistryAliases:        cfg.RegistryAliases,
+	IngressAPIVersion:      "v1", // api version for ingress (eg, "v1beta1"; defaults to "v1" for k8s 1.19+)
+	ContainerRuntime:       cfg.ContainerRuntime,
+	Images:                 images,
+	Registries:             addon.Registries,
+	CustomRegistries:       customRegistries,
+	NetworkInfo:            make(map[string]string),
+	Environment: map[string]string{
+	"MockGoogleToken": os.Getenv("MOCK_GOOGLE_TOKEN"),
+	},
+	LegacyPodSecurityPolicy: v.LT(semver.Version{Major: 1, Minor: 25}),
+	LegacyRuntimeClass:      v.LT(semver.Version{Major: 1, Minor: 25}),
 	}
 	if opts.ImageRepository != "" && !strings.HasSuffix(opts.ImageRepository, "/") {
-		opts.ImageRepository += "/"
+	opts.ImageRepository += "/"
 	}
 	if opts.Registries == nil {
-		opts.Registries = make(map[string]string)
+	opts.Registries = make(map[string]string)
 	}
 
 	// maintain backwards compatibility with k8s < v1.19
 	// by using v1beta1 instead of v1 api version for ingress
 	if semver.MustParseRange("<1.19.0")(v) {
-		opts.IngressAPIVersion = "v1beta1"
+	opts.IngressAPIVersion = "v1beta1"
 	}
 	if semver.MustParseRange("<1.20.0")(v) {
-		opts.PreOneTwentyKubernetes = true
+	opts.PreOneTwentyKubernetes = true
 	}
 
 	// Network info for generating template
@@ -932,51 +981,51 @@ func GenerateTemplateData(addon *Addon, cc *config.ClusterConfig, netInfo Networ
 
 	// Append postfix "/" to registries
 	for k, v := range opts.Registries {
-		if v != "" && !strings.HasSuffix(v, "/") {
-			opts.Registries[k] = v + "/"
-		}
+	if v != "" && !strings.HasSuffix(v, "/") {
+	opts.Registries[k] = v + "/"
+	}
 	}
 
 	for k, v := range opts.CustomRegistries {
-		if v != "" && !strings.HasSuffix(v, "/") {
-			opts.CustomRegistries[k] = v + "/"
-		}
+	if v != "" && !strings.HasSuffix(v, "/") {
+	opts.CustomRegistries[k] = v + "/"
+	}
 	}
 
 	for name, image := range opts.Images {
-		if _, ok := opts.Registries[name]; !ok {
-			opts.Registries[name] = "" // Avoid nil access when rendering
-		}
+	if _, ok := opts.Registries[name]; !ok {
+	opts.Registries[name] = "" // Avoid nil access when rendering
+	}
 
-		// tl;dr If the user specified a custom image remove the default registry
-		// Without the line below, if you try to overwrite an image the default registry is still used in the templating
-		// Example - image name: MetricsScraper, default registry: docker.io, default image: kubernetesui/metrics-scraper
-		// Passed on addon enable: --images=MetricsScraper=k8s.gcr.io/echoserver:1.4
-		// Without this line the resulting image would be docker.io/k8s.gcr.io/echoserver:1.4
-		if _, ok := cc.CustomAddonImages[name]; ok {
-			opts.Registries[name] = ""
-		}
+	// tl;dr If the user specified a custom image remove the default registry
+	// Without the line below, if you try to overwrite an image the default registry is still used in the templating
+	// Example - image name: MetricsScraper, default registry: docker.io, default image: kubernetesui/metrics-scraper
+	// Passed on addon enable: --images=MetricsScraper=k8s.gcr.io/echoserver:1.4
+	// Without this line the resulting image would be docker.io/k8s.gcr.io/echoserver:1.4
+	if _, ok := cc.CustomAddonImages[name]; ok {
+	opts.Registries[name] = ""
+	}
 
-		if enable {
-			if override, ok := opts.CustomRegistries[name]; ok {
-				out.Infof("Using image {{.registry}}{{.image}}", out.V{
-					"registry": override,
-					// removing the SHA from UI
-					// SHA example gcr.io/k8s-minikube/gcp-auth-webhook:v0.0.4@sha256:65e9e69022aa7b0eb1e390e1916e3bf67f75ae5c25987f9154ef3b0e8ab8528b
-					"image": strings.Split(image, "@")[0],
-				})
-			} else if opts.ImageRepository != "" {
-				out.Infof("Using image {{.registry}}{{.image}} (global image repository)", out.V{
-					"registry": opts.ImageRepository,
-					"image":    image,
-				})
-			} else {
-				out.Infof("Using image {{.registry}}{{.image}}", out.V{
-					"registry": opts.Registries[name],
-					"image":    strings.Split(image, "@")[0],
-				})
-			}
-		}
+	if enable {
+	if override, ok := opts.CustomRegistries[name]; ok {
+	out.Infof("Using image {{.registry}}{{.image}}", out.V{
+	"registry": override,
+	// removing the SHA from UI
+	// SHA example gcr.io/k8s-minikube/gcp-auth-webhook:v0.0.4@sha256:65e9e69022aa7b0eb1e390e1916e3bf67f75ae5c25987f9154ef3b0e8ab8528b
+	"image": strings.Split(image, "@")[0],
+	})
+	} else if opts.ImageRepository != "" {
+	out.Infof("Using image {{.registry}}{{.image}} (global image repository)", out.V{
+	"registry": opts.ImageRepository,
+	"image":    image,
+	})
+	} else {
+	out.Infof("Using image {{.registry}}{{.image}}", out.V{
+	"registry": opts.Registries[name],
+	"image":    strings.Split(image, "@")[0],
+	})
+	}
+	}
 	}
 	return opts
-}
+	}

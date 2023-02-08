@@ -155,4 +155,8 @@ var (
 	// CloudSpanner assets for cloud-spanner addon
 	//go:embed cloud-spanner/*.yaml
 	CloudSpanner embed.FS
+
+	// NGINX assets for NGINX addon
+	//go:embed nginx/*.yaml
+	NGINX embed.FS
 )

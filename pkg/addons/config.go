@@ -212,4 +212,9 @@ var Addons = []*Addon{
 		set:       SetBool,
 		callbacks: []setFn{EnableOrDisableAddon},
 	},
+	{
+		name:      "nginx-ingress",
+		set:       SetBool,
+		callbacks: []setFn{EnableOrDisableAddon},
+	},
 }
